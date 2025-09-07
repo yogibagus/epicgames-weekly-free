@@ -30,14 +30,19 @@ export default async function handler(
   let browser;
   
   try {
-    // Configure Puppeteer for Vercel
+    // Configure Puppeteer for Vercel with enhanced @sparticuz/chromium setup
     const isVercel = process.env.VERCEL === '1';
     
-    let puppeteerOptions;
+    let browser;
     
     if (isVercel) {
-      // Vercel configuration with enhanced args for serverless
-      puppeteerOptions = {
+      // Vercel configuration with @sparticuz/chromium
+      console.log('Configuring for Vercel environment...');
+      
+      // Set up Chromium for Vercel
+      await chromium.font('https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf');
+      
+      browser = await puppeteer.launch({
         args: [
           ...chromium.args,
           '--no-sandbox',
@@ -53,16 +58,25 @@ export default async function handler(
           '--disable-backgrounding-occluded-windows',
           '--disable-renderer-backgrounding',
           '--single-process',
-          '--no-zygote',
-          '--disable-extensions'
+          '--disable-extensions',
+          '--disable-plugins',
+          '--disable-default-apps',
+          '--disable-sync',
+          '--disable-translate',
+          '--hide-scrollbars',
+          '--mute-audio',
+          '--no-first-run',
+          '--safebrowsing-disable-auto-update',
+          '--disable-ipc-flooding-protection'
         ],
         defaultViewport: chromium.defaultViewport,
         executablePath: await chromium.executablePath(),
         headless: chromium.headless,
-      };
+      });
+      console.log('Successfully launched browser on Vercel');
     } else {
       // Local development configuration
-      puppeteerOptions = {
+      browser = await puppeteer.launch({
         headless: true,
         executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         args: [
@@ -76,27 +90,7 @@ export default async function handler(
           '--disable-web-security',
           '--disable-features=VizDisplayCompositor'
         ]
-      };
-    }
-
-    // Launch Puppeteer browser with error handling
-    try {
-      browser = await puppeteer.launch(puppeteerOptions);
-    } catch (launchError) {
-      console.error('Failed to launch browser:', launchError);
-      
-      // Fallback for Vercel if initial launch fails
-      if (isVercel) {
-        console.log('Attempting fallback configuration...');
-        const fallbackOptions = {
-          args: chromium.args,
-          executablePath: await chromium.executablePath(),
-          headless: true,
-        };
-        browser = await puppeteer.launch(fallbackOptions);
-      } else {
-        throw launchError;
-      }
+      });
     }
 
     const page = await browser.newPage();
