@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import puppeteer from 'puppeteer-core';
+import type { Browser } from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 
 interface FreeGame {
@@ -27,13 +28,11 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  let browser;
+  let browser: Browser | null = null;
   
   try {
     // Configure Puppeteer for Vercel with enhanced @sparticuz/chromium setup
     const isVercel = process.env.VERCEL === '1';
-    
-    let browser;
     
     if (isVercel) {
       // Vercel configuration with @sparticuz/chromium
@@ -93,6 +92,9 @@ export default async function handler(
       });
     }
 
+    if (!browser) {
+      throw new Error('Failed to launch browser');
+    }
     const page = await browser.newPage();
     
     // Set user agent to avoid detection
@@ -387,7 +389,10 @@ export default async function handler(
     console.log(`Successfully scraped ${freeGames.length} free games`);
 
     // Close browser
-    await browser.close();
+    if (browser) {
+      await browser.close();
+      browser = null;
+    }
 
     // Return the scraped data
     res.status(200).json({
@@ -402,6 +407,7 @@ export default async function handler(
     
     if (browser) {
       await browser.close();
+      browser = null;
     }
 
     res.status(500).json({
