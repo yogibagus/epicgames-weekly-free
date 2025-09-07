@@ -37,9 +37,9 @@ export default async function handler(
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
-      headless: chromium.headless as boolean,
+      headless: chromium.headless,
     } : {
-      headless: "new" as const,
+      headless: true,
       executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
       args: [
         '--no-sandbox',
