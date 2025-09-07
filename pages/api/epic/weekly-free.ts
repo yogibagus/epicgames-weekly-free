@@ -33,29 +33,71 @@ export default async function handler(
     // Configure Puppeteer for Vercel
     const isVercel = process.env.VERCEL === '1';
     
-    const puppeteerOptions = isVercel ? {
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    } : {
-      headless: true,
-      executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
-      ]
-    };
+    let puppeteerOptions;
+    
+    if (isVercel) {
+      // Vercel configuration with enhanced args for serverless
+      puppeteerOptions = {
+        args: [
+          ...chromium.args,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--single-process',
+          '--no-zygote',
+          '--disable-extensions'
+        ],
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+      };
+    } else {
+      // Local development configuration
+      puppeteerOptions = {
+        headless: true,
+        executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor'
+        ]
+      };
+    }
 
-    // Launch Puppeteer browser
-    browser = await puppeteer.launch(puppeteerOptions);
+    // Launch Puppeteer browser with error handling
+    try {
+      browser = await puppeteer.launch(puppeteerOptions);
+    } catch (launchError) {
+      console.error('Failed to launch browser:', launchError);
+      
+      // Fallback for Vercel if initial launch fails
+      if (isVercel) {
+        console.log('Attempting fallback configuration...');
+        const fallbackOptions = {
+          args: chromium.args,
+          executablePath: await chromium.executablePath(),
+          headless: true,
+        };
+        browser = await puppeteer.launch(fallbackOptions);
+      } else {
+        throw launchError;
+      }
+    }
 
     const page = await browser.newPage();
     

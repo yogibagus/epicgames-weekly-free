@@ -41,9 +41,52 @@ The project is pre-configured for Vercel with:
 
 ## Troubleshooting
 
-If you encounter issues:
+### Common Issues
 
-1. Check Vercel function logs
+#### 1. Chromium Launch Errors
+If you see errors like `libnspr4.so: cannot open shared object file`:
+
+- ✅ **Fixed**: Enhanced Chromium args with `--single-process` and `--no-zygote`
+- ✅ **Fixed**: Added fallback configuration for Vercel
+- ✅ **Fixed**: Proper environment variable configuration
+
+#### 2. Build Failures
+If the build fails:
+
+1. Check Vercel function logs in the dashboard
 2. Ensure all dependencies are in `package.json`
-3. Verify the API endpoint is accessible
-4. Check for any build errors in Vercel dashboard
+3. Verify TypeScript compilation passes locally with `npm run build`
+4. Check for any missing environment variables
+
+#### 3. API Timeout Issues
+If requests timeout:
+
+- The API has a 30-second timeout configured in `vercel.json`
+- First request may be slower due to cold start
+- Subsequent requests will be faster
+
+#### 4. CORS Issues
+If you get CORS errors:
+
+- CORS is pre-configured in `next.config.js`
+- All origins are allowed (`*`)
+- Check if the request is going to the correct endpoint
+
+### Debug Steps
+
+1. **Check Vercel Logs**:
+   ```bash
+   vercel logs
+   ```
+
+2. **Test Locally**:
+   ```bash
+   npm run build
+   npm run dev
+   curl http://localhost:3000/api/health
+   ```
+
+3. **Verify Dependencies**:
+   ```bash
+   npm list @sparticuz/chromium puppeteer-core
+   ```
