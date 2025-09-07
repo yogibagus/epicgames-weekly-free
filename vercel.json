@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "pages/api/epic/weekly-free.ts": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["iad1"]
+}

@@ -14,6 +14,21 @@ npm run dev
 # Open http://localhost:3000
 ```
 
+## 🚀 Deploy to Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/epic-games-free-weekly-api)
+
+### Manual Deployment
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+The project is pre-configured for Vercel with optimized Puppeteer for serverless environments.
+
 ## 📡 API Endpoint
 
 ### `GET /api/epic/weekly-free`

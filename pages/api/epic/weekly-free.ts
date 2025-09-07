@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 interface FreeGame {
   title: string;
@@ -29,9 +30,16 @@ export default async function handler(
   let browser;
   
   try {
-    // Launch Puppeteer browser
-    browser = await puppeteer.launch({
-      headless: "new",
+    // Configure Puppeteer for Vercel
+    const isVercel = process.env.VERCEL === '1';
+    
+    const puppeteerOptions = isVercel ? {
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless as boolean,
+    } : {
+      headless: "new" as const,
       executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
       args: [
         '--no-sandbox',
@@ -44,7 +52,10 @@ export default async function handler(
         '--disable-web-security',
         '--disable-features=VizDisplayCompositor'
       ]
-    });
+    };
+
+    // Launch Puppeteer browser
+    browser = await puppeteer.launch(puppeteerOptions);
 
     const page = await browser.newPage();
     
@@ -97,7 +108,7 @@ export default async function handler(
         console.log(`Total images found: ${images.length}`);
         
         // Known image URLs for specific games (fallback)
-        const knownImages = {
+        const knownImages: Record<string, string> = {
           'Fortnite': 'https://cdn1.epicgames.com/offer/fn/FNBR_37-00_C6S4_EGS_Launcher_KeyArt_FNLogo_Blade_1200x1600_1200x1600-0924136c90b79f9006796f69f24a07f6?resize=1&w=360&h=480&quality=medium',
           'Rocket League®': 'https://cdn1.epicgames.com/offer/rocketleague/RL_EGS_Launcher_KeyArt_1200x1600_1200x1600-5c8d08c2b79d562c8a0b2a2a2a2a2a2a?resize=1&w=360&h=480&quality=medium',
           'Genshin Impact': 'https://cdn1.epicgames.com/offer/genshin-impact/EGS_GenshinImpact_miHoYoLimited_S1_2560x1440-91c6cd7312cc2647c3ebccca10f30399?resize=1&w=360&h=480&quality=medium',
@@ -112,7 +123,7 @@ export default async function handler(
         }
         
         // Create a more specific search pattern for each game
-        const gameSearchPatterns = {
+        const gameSearchPatterns: Record<string, string[]> = {
           'Monument Valley': ['monument-valley', 'monumentvalley', 'monument_valley'],
           'Ghostrunner 2': ['ghostrunner', 'ghostrunner-2', 'ghostrunner2', 'ghostrunner_2'],
           'The Battle of Polytopia': ['polytopia', 'battle-polytopia', 'battle_of_polytopia'],

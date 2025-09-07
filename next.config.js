@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable experimental features for better performance
+  experimental: {
+    serverComponentsExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
+  },
+  
+  // Configure for Vercel deployment
+  output: 'standalone',
+  
   async headers() {
     return [
       {
