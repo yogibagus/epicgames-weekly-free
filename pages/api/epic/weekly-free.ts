@@ -40,6 +40,13 @@ export default async function handler(
       
       // Set up Chromium for Vercel
       await chromium.font('https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf');
+      // Force headless and disable graphics to avoid missing system libs
+      chromium.setHeadlessMode = true;
+      chromium.setGraphicsMode = false;
+      const executablePath = await chromium.executablePath();
+      if (!executablePath) {
+        throw new Error('Chromium executablePath not found');
+      }
       
       browser = await puppeteer.launch({
         args: [
@@ -69,8 +76,8 @@ export default async function handler(
           '--disable-ipc-flooding-protection'
         ],
         defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
+        executablePath,
+        headless: true,
       });
       console.log('Successfully launched browser on Vercel');
     } else {
