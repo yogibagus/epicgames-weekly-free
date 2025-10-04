@@ -17,7 +17,8 @@ vercel
 ```
 
 ### 3. Environment Variables
-No environment variables are required for basic functionality.
+- **Vercel**: No additional environment variables are required.
+- **Local development**: Set `CHROME_EXECUTABLE_PATH` (or `PUPPETEER_EXECUTABLE_PATH`) to the absolute path of a Chrome/Chromium binary so Puppeteer can launch the browser during scraping.
 
 ## Configuration
 
