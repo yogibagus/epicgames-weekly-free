@@ -8,11 +8,16 @@ A simple Next.js API that scrapes free games from Epic Games Store and provides 
 # Install dependencies
 npm install
 
+# Provide a Chrome/Chromium executable for local scraping
+export CHROME_EXECUTABLE_PATH="/path/to/your/chrome"
+
 # Start development server
 npm run dev
 
 # Open http://localhost:3000
 ```
+
+> **Tip:** When running locally you must point Puppeteer to a Chrome/Chromium binary. Set `CHROME_EXECUTABLE_PATH` (or `PUPPETEER_EXECUTABLE_PATH`) before starting the dev server. Vercel deployments auto-configure this path.
 
 ## 🚀 Deploy to Vercel
 

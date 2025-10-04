@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import puppeteer from 'puppeteer-core';
-import type { Browser } from 'puppeteer-core';
+import type { Browser, LaunchOptions } from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 
 interface FreeGame {
@@ -29,62 +29,76 @@ export default async function handler(
   }
 
   let browser: Browser | null = null;
-  
+
   try {
-    // Configure Puppeteer for Vercel with enhanced @sparticuz/chromium setup
     const isVercel = process.env.VERCEL === '1';
-    
+
+    const resolveExecutablePath = async (): Promise<string> => {
+      if (isVercel) {
+        const vercelExecutable = await chromium.executablePath();
+        if (!vercelExecutable) {
+          throw new Error('Chromium executablePath not found for Vercel environment');
+        }
+        return vercelExecutable;
+      }
+
+      const manualPath =
+        process.env.CHROME_EXECUTABLE_PATH || process.env.PUPPETEER_EXECUTABLE_PATH;
+      if (manualPath) {
+        return manualPath;
+      }
+
+      const localChromium = await chromium.executablePath();
+      if (!localChromium) {
+        throw new Error(
+          'Unable to determine a Chrome executable path. Set CHROME_EXECUTABLE_PATH in your local environment.'
+        );
+      }
+
+      return localChromium;
+    };
+
+    const executablePath = await resolveExecutablePath();
+
+    let launchOptions: LaunchOptions;
+
     if (isVercel) {
-      // Vercel configuration with @sparticuz/chromium
-      console.log('Configuring for Vercel environment...');
-      
-      // Set up Chromium for Vercel
+      console.log('Configuring Chromium for Vercel runtime');
       await chromium.font('https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf');
-      // Force headless and disable graphics to avoid missing system libs
       chromium.setHeadlessMode = true;
       chromium.setGraphicsMode = false;
-      const executablePath = await chromium.executablePath();
-      if (!executablePath) {
-        throw new Error('Chromium executablePath not found');
-      }
-      
-      browser = await puppeteer.launch({
+
+      launchOptions = {
         args: [
           ...chromium.args,
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
+          '--single-process',
           '--disable-accelerated-2d-canvas',
-          '--no-first-run',
           '--no-zygote',
           '--disable-gpu',
           '--disable-web-security',
-          '--disable-features=VizDisplayCompositor',
+          '--disable-ipc-flooding-protection',
           '--disable-background-timer-throttling',
           '--disable-backgrounding-occluded-windows',
           '--disable-renderer-backgrounding',
-          '--single-process',
           '--disable-extensions',
-          '--disable-plugins',
           '--disable-default-apps',
           '--disable-sync',
           '--disable-translate',
           '--hide-scrollbars',
           '--mute-audio',
-          '--no-first-run',
-          '--safebrowsing-disable-auto-update',
-          '--disable-ipc-flooding-protection'
         ],
         defaultViewport: chromium.defaultViewport,
         executablePath,
-        headless: true,
-      });
-      console.log('Successfully launched browser on Vercel');
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true,
+      };
     } else {
-      // Local development configuration
-      browser = await puppeteer.launch({
+      launchOptions = {
         headless: true,
-        executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        executablePath,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -94,10 +108,12 @@ export default async function handler(
           '--no-zygote',
           '--disable-gpu',
           '--disable-web-security',
-          '--disable-features=VizDisplayCompositor'
-        ]
-      });
+        ],
+        ignoreHTTPSErrors: true,
+      };
     }
+
+    browser = await puppeteer.launch(launchOptions);
 
     if (!browser) {
       throw new Error('Failed to launch browser');

@@ -1,7 +1,9 @@
 {
   "functions": {
     "pages/api/epic/weekly-free.ts": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 1024,
+      "runtime": "nodejs20.x"
     }
   },
   "regions": ["iad1"],
